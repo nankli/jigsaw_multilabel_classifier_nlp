@@ -1,54 +1,72 @@
-import nbformat
 import json
-import sys
+import nbformat
 from pathlib import Path
 
-def fix_notebook(input_path, output_path=None):
+def aggressive_fix(input_path, output_path=None):
     input_path = Path(input_path)
     if output_path is None:
         output_path = input_path.with_name(f"fixed_{input_path.name}")
-    
+
+    # Load as raw JSON (even if malformed)
+    with open(input_path, "r", encoding="utf-8") as f:
+        raw = f.read()
+
+    # Try to strip control characters or invalid JSON fragments
     try:
-        # Try to read as a proper notebook
-        with open(input_path, "r", encoding="utf-8") as f:
-            nb = nbformat.read(f, as_version=4)
-    except Exception as e:
-        print(f"[ERROR] Could not parse with nbformat directly: {e}")
-        # Try raw JSON repair
-        with open(input_path, "r", encoding="utf-8") as f:
-            raw = json.load(f)
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(f"[WARN] JSONDecodeError: {e}")
+        # Attempt minimal repair: remove bad characters
+        raw = raw.replace("\x00", "")
+        data = json.loads(raw)
 
-        # Ensure required fields
-        raw.setdefault("cells", [])
-        raw.setdefault("metadata", {})
-        raw.setdefault("nbformat", 4)
-        raw.setdefault("nbformat_minor", 5)
+    # Ensure required top-level fields
+    if not isinstance(data, dict):
+        data = {}
+    data.setdefault("cells", [])
+    data.setdefault("metadata", {})
+    data.setdefault("nbformat", 4)
+    data.setdefault("nbformat_minor", 5)
 
-        # Add default kernelspec if missing
-        if "kernelspec" not in raw["metadata"]:
-            raw["metadata"]["kernelspec"] = {
-                "display_name": "Python 3",
-                "language": "python",
-                "name": "python3"
-            }
-        # Add language info if missing
-        if "language_info" not in raw["metadata"]:
-            raw["metadata"]["language_info"] = {
-                "name": "python",
-                "version": "3.x"
-            }
+    # Repair each cell if needed
+    fixed_cells = []
+    for cell in data.get("cells", []):
+        if not isinstance(cell, dict):
+            continue
+        cell.setdefault("cell_type", "code")
+        cell.setdefault("metadata", {})
+        cell.setdefault("source", [])
+        if isinstance(cell["source"], str):
+            cell["source"] = [cell["source"]]
+        if cell["cell_type"] == "code":
+            cell.setdefault("execution_count", None)
+            cell.setdefault("outputs", [])
+        fixed_cells.append(cell)
+    data["cells"] = fixed_cells
 
-        nb = nbformat.from_dict(raw)
+    # Repair metadata
+    if "kernelspec" not in data["metadata"]:
+        data["metadata"]["kernelspec"] = {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        }
+    if "language_info" not in data["metadata"]:
+        data["metadata"]["language_info"] = {
+            "name": "python",
+            "version": "3.x"
+        }
 
-    # Save repaired notebook
+    # Convert back to nbformat
+    nb = nbformat.from_dict(data)
+
+    # Save fixed notebook
     with open(output_path, "w", encoding="utf-8") as f:
         nbformat.write(nb, f)
 
-    print(f"[OK] Fixed notebook saved as {output_path}")
+    print(f"[OK] Aggressively fixed notebook saved as {output_path}")
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python fix_notebook.py your_notebook.ipynb")
-    else:
-        fix_notebook(sys.argv[1])
+
+# Example usage
+aggressive_fix("Jigsaw_multilabels_BERT.ipynb")
 
