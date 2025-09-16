@@ -1,0 +1,107 @@
+# Jigsaw Multilabel Classification with BERT & T5
+
+This repository explores **multi-label text classification** on the [Jigsaw Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge) using **BERT** and **T5**.  
+
+The goal is to classify online comments into overlapping categories:
+- Toxic  
+- Severe Toxic  
+- Obscene  
+- Threat  
+- Insult  
+- Identity Hate  
+
+---
+
+## 📂 Project Structure
+```
+├── data/                  # Dataset (not included, see instructions)
+├── notebooks/             # Jupyter/Colab notebooks for experiments
+├── models/                # Saved model checkpoints
+├── scripts/               # Training / evaluation scripts
+├── requirements.txt       # Python dependencies
+└── README.md              # Project documentation
+```
+
+---
+
+## 🚀 Models
+- **BERT (base-uncased)**  
+  Fine-tuned for multi-label classification using a sigmoid output layer.  
+
+- **T5 (Text-to-Text Transfer Transformer)**  
+  Reformulated as a text-to-text task (input: comment → output: labels).  
+
+---
+
+## ⚙️ Setup
+
+### 1. Clone the repository
+```bash
+git clone git@github.com:your-username/jigsaw-multilabels.git
+cd jigsaw-multilabels
+```
+
+### 2. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Download dataset
+Download the dataset from Kaggle:  
+👉 [Jigsaw Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data)  
+
+Place CSV files under `data/`.
+
+---
+
+## 🏋️ Training
+
+### Train BERT
+```bash
+python scripts/train_bert.py     --epochs 3     --batch_size 16     --learning_rate 2e-5
+```
+
+### Train T5
+```bash
+python scripts/train_t5.py     --epochs 3     --batch_size 8     --learning_rate 3e-4
+```
+
+---
+
+## 📊 Evaluation
+Metrics used:
+- **Hamming Loss** (fraction of incorrect labels)  
+- **F1-Score** (macro & micro)  
+- **ROC-AUC** per label  
+
+Run evaluation:
+```bash
+python scripts/evaluate.py --model bert
+```
+
+---
+
+## 📈 Results
+| Model | Hamming Loss ↓ | Macro F1 ↑ | Micro F1 ↑ |
+|-------|----------------|------------|------------|
+| BERT  | 0.xx           | 0.xx       | 0.xx       |
+| T5    | 0.xx           | 0.xx       | 0.xx       |
+
+---
+
+## 📝 Notes
+- **BERT** is efficient and works well for classification.  
+- **T5** offers flexibility by framing the task as sequence-to-sequence.  
+- Checkpoints are stored in `models/`.  
+
+---
+
+## 📌 Roadmap
+- [ ] Add RoBERTa and DeBERTa experiments  
+- [ ] Hyperparameter tuning  
+- [ ] Data augmentation experiments  
+
+---
+
+## 📜 License
+This project is licensed under the MIT License.  
